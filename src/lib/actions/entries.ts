@@ -28,7 +28,7 @@ function parseCategory(value: string): Category | null {
 
 function parseEntryFields(formData: FormData) {
   const category = parseCategory(String(formData.get("category") ?? ""));
-  const property_id =
+  const rawPropertyId =
     String(formData.get("property_id") ?? "").trim() || null;
   const performer =
     String(formData.get("performer") ?? "taxpayer") === "spouse"
@@ -37,6 +37,8 @@ function parseEntryFields(formData: FormData) {
   const activity_kind =
     String(formData.get("activity_kind") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim();
+  // Forms keep a property selection around; only rental work may carry it.
+  const property_id = category === "rental" ? rawPropertyId : null;
   return { category, property_id, performer, activity_kind, notes };
 }
 
@@ -77,7 +79,7 @@ export async function startTimerAction(
       activity_kind: fields.activity_kind,
       notes: fields.notes || null,
     });
-    if ("error" in result) return result;
+    if (result.error) return { error: result.error };
     revalidatePath("/", "layout");
     return { ok: true };
   }

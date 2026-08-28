@@ -19,7 +19,7 @@ export function AppShell({
     <div className="flex min-h-full flex-col">
       {bypass ? (
         <div className="no-print bg-live/20 px-3 py-1.5 text-center text-[11px] font-medium tracking-wide text-ink">
-          Local bypass on — in-memory demo data, not Supabase
+          Local bypass on — demo data only, not Supabase
         </div>
       ) : null}
       <header className="no-print sticky top-0 z-20 border-b border-rule/70 bg-paper/88 backdrop-blur-md">

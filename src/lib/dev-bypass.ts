@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 import { currentTaxYear, todayISO } from "@/lib/date";
 import { buildYearSummary } from "@/lib/reps/summary";
 import type {
@@ -25,6 +27,9 @@ export const DEV_EMAIL = "dev@localhost";
 const PROPERTY_OAK = "11111111-1111-4111-8111-111111111111";
 const PROPERTY_PINE = "22222222-2222-4222-8222-222222222222";
 
+/** File-backed so server actions and RSC share state in next dev. */
+const STORE_PATH = join(process.cwd(), ".next", "reps-dev-store.json");
+
 export type DevStore = {
   profile: Profile;
   properties: Property[];
@@ -33,11 +38,6 @@ export type DevStore = {
   settingsByYear: Record<number, TaxYearSettings>;
   flags: ParticipationFlag[];
 };
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __repsDevStore: DevStore | undefined;
-}
 
 function id() {
   return crypto.randomUUID();
@@ -206,10 +206,28 @@ function seed(): DevStore {
 }
 
 export function getDevStore(): DevStore {
-  if (!globalThis.__repsDevStore) {
-    globalThis.__repsDevStore = seed();
+  try {
+    if (existsSync(STORE_PATH)) {
+      return JSON.parse(readFileSync(STORE_PATH, "utf8")) as DevStore;
+    }
+  } catch {
+    // Fall through and reseed.
   }
-  return globalThis.__repsDevStore;
+  const store = seed();
+  persistDevStore(store);
+  return store;
+}
+
+function persistDevStore(store: DevStore) {
+  mkdirSync(join(process.cwd(), ".next"), { recursive: true });
+  writeFileSync(STORE_PATH, JSON.stringify(store));
+}
+
+function updateDevStore(mutate: (store: DevStore) => void) {
+  const store = getDevStore();
+  mutate(store);
+  persistDevStore(store);
+  return store;
 }
 
 export function loadDevWorkspace(year: number) {
@@ -257,12 +275,13 @@ export function saveDevProfile(input: {
   spouse_name: string | null;
   real_estate_employment: NonNullable<Profile["real_estate_employment"]>;
 }) {
-  const store = getDevStore();
-  store.profile = {
-    ...store.profile,
-    ...input,
-    updated_at: new Date().toISOString(),
-  };
+  updateDevStore((store) => {
+    store.profile = {
+      ...store.profile,
+      ...input,
+      updated_at: new Date().toISOString(),
+    };
+  });
 }
 
 export function startDevTimer(input: {
@@ -274,15 +293,17 @@ export function startDevTimer(input: {
 }) {
   const store = getDevStore();
   if (store.timer) return { error: "A timer is already running. Stop it first." };
-  store.timer = {
-    user_id: DEV_USER_ID,
-    started_at: new Date().toISOString(),
-    category: input.category,
-    property_id: input.category === "rental" ? input.property_id : null,
-    performer: input.performer,
-    activity_kind: input.activity_kind,
-    notes: input.notes,
-  };
+  updateDevStore((s) => {
+    s.timer = {
+      user_id: DEV_USER_ID,
+      started_at: new Date().toISOString(),
+      category: input.category,
+      property_id: input.category === "rental" ? input.property_id : null,
+      performer: input.performer,
+      activity_kind: input.activity_kind,
+      notes: input.notes,
+    };
+  });
   return { ok: true as const };
 }
 
@@ -292,43 +313,49 @@ export function stopDevTimer(input: {
 }) {
   const store = getDevStore();
   if (!store.timer) return { error: "No timer is running." };
+  const timer = store.timer;
   const ended = new Date();
-  const started = new Date(store.timer.started_at);
+  const started = new Date(timer.started_at);
   const duration_minutes = Math.max(
     1,
     Math.round((ended.getTime() - started.getTime()) / 60000),
   );
-  store.entries.unshift({
-    id: id(),
-    user_id: DEV_USER_ID,
-    occurred_on: todayISO(started),
-    duration_minutes,
-    started_at: store.timer.started_at,
-    ended_at: ended.toISOString(),
-    category: store.timer.category,
-    property_id: store.timer.property_id,
-    performer: store.timer.performer,
-    activity_kind: input.activity_kind || store.timer.activity_kind,
-    notes: input.notes,
-    source: "timer",
-    created_at: ended.toISOString(),
+  updateDevStore((s) => {
+    s.entries.unshift({
+      id: id(),
+      user_id: DEV_USER_ID,
+      occurred_on: todayISO(started),
+      duration_minutes,
+      started_at: timer.started_at,
+      ended_at: ended.toISOString(),
+      category: timer.category,
+      property_id: timer.property_id,
+      performer: timer.performer,
+      activity_kind: input.activity_kind || timer.activity_kind,
+      notes: input.notes,
+      source: "timer",
+      created_at: ended.toISOString(),
+    });
+    s.timer = null;
   });
-  store.timer = null;
   return { ok: true as const };
 }
 
 export function cancelDevTimer() {
-  getDevStore().timer = null;
+  updateDevStore((store) => {
+    store.timer = null;
+  });
   return { ok: true as const };
 }
 
 export function createDevEntry(input: Omit<TimeEntry, "id" | "user_id" | "created_at">) {
-  const store = getDevStore();
-  store.entries.unshift({
-    ...input,
-    id: id(),
-    user_id: DEV_USER_ID,
-    created_at: new Date().toISOString(),
+  updateDevStore((store) => {
+    store.entries.unshift({
+      ...input,
+      id: id(),
+      user_id: DEV_USER_ID,
+      created_at: new Date().toISOString(),
+    });
   });
   return { ok: true as const };
 }
@@ -351,25 +378,30 @@ export function updateDevEntry(
   const store = getDevStore();
   const idx = store.entries.findIndex((e) => e.id === entryId);
   if (idx < 0) return { error: "Entry not found." };
-  store.entries[idx] = { ...store.entries[idx], ...patch };
+  updateDevStore((s) => {
+    const i = s.entries.findIndex((e) => e.id === entryId);
+    if (i >= 0) s.entries[i] = { ...s.entries[i], ...patch };
+  });
   return { ok: true as const };
 }
 
 export function deleteDevEntry(entryId: string) {
-  const store = getDevStore();
-  store.entries = store.entries.filter((e) => e.id !== entryId);
+  updateDevStore((store) => {
+    store.entries = store.entries.filter((e) => e.id !== entryId);
+  });
   return { ok: true as const };
 }
 
 export function createDevProperty(name: string, address: string | null) {
-  const store = getDevStore();
-  store.properties.push({
-    id: id(),
-    user_id: DEV_USER_ID,
-    name,
-    address,
-    archived_at: null,
-    created_at: new Date().toISOString(),
+  updateDevStore((store) => {
+    store.properties.push({
+      id: id(),
+      user_id: DEV_USER_ID,
+      name,
+      address,
+      archived_at: null,
+      created_at: new Date().toISOString(),
+    });
   });
   return { ok: true as const };
 }
@@ -380,34 +412,47 @@ export function updateDevProperty(
   address: string | null,
 ) {
   const store = getDevStore();
-  const prop = store.properties.find((p) => p.id === propertyId);
-  if (!prop) return { error: "Property not found." };
-  prop.name = name;
-  prop.address = address;
+  if (!store.properties.some((p) => p.id === propertyId)) {
+    return { error: "Property not found." };
+  }
+  updateDevStore((s) => {
+    const prop = s.properties.find((p) => p.id === propertyId);
+    if (prop) {
+      prop.name = name;
+      prop.address = address;
+    }
+  });
   return { ok: true as const };
 }
 
 export function archiveDevProperty(propertyId: string, archived: boolean) {
   const store = getDevStore();
-  const prop = store.properties.find((p) => p.id === propertyId);
-  if (!prop) return { error: "Property not found." };
-  prop.archived_at = archived ? new Date().toISOString() : null;
+  if (!store.properties.some((p) => p.id === propertyId)) {
+    return { error: "Property not found." };
+  }
+  updateDevStore((s) => {
+    const prop = s.properties.find((p) => p.id === propertyId);
+    if (prop) {
+      prop.archived_at = archived ? new Date().toISOString() : null;
+    }
+  });
   return { ok: true as const };
 }
 
 export function setDevGrouping(year: number, grouped: boolean) {
-  const store = getDevStore();
-  const existing = store.settingsByYear[year];
-  if (existing) {
-    existing.group_rental_activities = grouped;
-  } else {
-    store.settingsByYear[year] = {
-      id: id(),
-      user_id: DEV_USER_ID,
-      year,
-      group_rental_activities: grouped,
-    };
-  }
+  updateDevStore((store) => {
+    const existing = store.settingsByYear[year];
+    if (existing) {
+      existing.group_rental_activities = grouped;
+    } else {
+      store.settingsByYear[year] = {
+        id: id(),
+        user_id: DEV_USER_ID,
+        year,
+        group_rental_activities: grouped,
+      };
+    }
+  });
 }
 
 export function saveDevMpFlag(input: {
@@ -417,28 +462,33 @@ export function saveDevMpFlag(input: {
   claimed: boolean;
   note: string | null;
 }) {
-  const store = getDevStore();
-  const idx = store.flags.findIndex(
-    (f) =>
-      f.year === input.year &&
-      f.test_code === input.test_code &&
-      f.property_id === input.property_id,
-  );
-  if (!input.claimed) {
-    if (idx >= 0) store.flags.splice(idx, 1);
-    return;
-  }
-  if (idx >= 0) {
-    store.flags[idx] = { ...store.flags[idx], claimed: true, note: input.note };
-  } else {
-    store.flags.push({
-      id: id(),
-      user_id: DEV_USER_ID,
-      year: input.year,
-      property_id: input.property_id,
-      test_code: input.test_code,
-      claimed: true,
-      note: input.note,
-    });
-  }
+  updateDevStore((store) => {
+    const idx = store.flags.findIndex(
+      (f) =>
+        f.year === input.year &&
+        f.test_code === input.test_code &&
+        f.property_id === input.property_id,
+    );
+    if (!input.claimed) {
+      if (idx >= 0) store.flags.splice(idx, 1);
+      return;
+    }
+    if (idx >= 0) {
+      store.flags[idx] = {
+        ...store.flags[idx],
+        claimed: true,
+        note: input.note,
+      };
+    } else {
+      store.flags.push({
+        id: id(),
+        user_id: DEV_USER_ID,
+        year: input.year,
+        property_id: input.property_id,
+        test_code: input.test_code,
+        claimed: true,
+        note: input.note,
+      });
+    }
+  });
 }

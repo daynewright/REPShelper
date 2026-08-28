@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { cookies } from "next/headers";
 import { currentTaxYear, yearBounds } from "@/lib/date";
 import { requireUser } from "@/lib/auth";
@@ -27,6 +28,7 @@ export async function getSelectedYear(): Promise<number> {
 export async function loadWorkspace(year?: number) {
   const selectedYear = year ?? (await getSelectedYear());
   if (isDevBypass()) {
+    noStore();
     return loadDevWorkspace(selectedYear);
   }
 
