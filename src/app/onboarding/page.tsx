@@ -97,7 +97,7 @@ export default async function OnboardingPage({
               ),
             )}
           </fieldset>
-          <Button type="submit" size="lg">
+          <Button type="submit" className="h-11 w-full">
             Save and continue
           </Button>
         </form>

@@ -55,7 +55,7 @@ export default async function LoginPage({
               autoComplete="current-password"
             />
           </div>
-          <Button type="submit" size="lg">
+          <Button type="submit" className="h-11 w-full">
             Sign in
           </Button>
         </form>

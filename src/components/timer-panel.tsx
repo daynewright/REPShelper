@@ -124,7 +124,6 @@ export function TimerPanel({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Short description for the CPA log"
-              className="bg-paper/95"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -137,9 +136,9 @@ export function TimerPanel({
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               disabled={pending}
-              className="text-paper/80 hover:bg-paper/10 hover:text-paper"
+              className="border-paper/30 bg-transparent text-paper hover:bg-paper/10 hover:text-paper"
               onClick={() =>
                 start(async () => {
                   await cancelTimerAction();
@@ -227,8 +226,7 @@ export function TimerPanel({
         )}
         <Button
           type="submit"
-          size="lg"
-          className="w-full"
+          className="h-11 w-full"
           disabled={pending || (category === "rental" && !propertyId)}
         >
           Start

@@ -106,13 +106,12 @@ function ActivityRow({
           />
           <Textarea name="notes" defaultValue={entry.notes} required />
           <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={pending}>
+            <Button type="submit" disabled={pending}>
               Save
             </Button>
             <Button
               type="button"
-              size="sm"
-              variant="ghost"
+              variant="outline"
               onClick={() => setEditing(false)}
             >
               Cancel
@@ -156,8 +155,8 @@ function ActivityRow({
       <div className="col-span-2 flex gap-1 sm:col-span-1 sm:justify-end">
         <Button
           type="button"
-          size="xs"
-          variant="ghost"
+          size="sm"
+          variant="outline"
           onClick={() => setEditing(true)}
         >
           Edit
@@ -172,7 +171,12 @@ function ActivityRow({
           }}
         >
           <input type="hidden" name="id" value={entry.id} />
-          <Button type="submit" size="xs" variant="ghost" disabled={pending}>
+          <Button
+            type="submit"
+            size="sm"
+            variant="outline"
+            disabled={pending}
+          >
             Delete
           </Button>
         </form>

@@ -50,7 +50,7 @@ export function PropertiesManager({
             irrevocable without IRS consent.
           </p>
         </div>
-        <Button type="submit" size="sm" variant="outline" disabled={pending}>
+        <Button type="submit" variant="outline" disabled={pending}>
           {grouped ? "Track separately" : "Track as grouped"}
         </Button>
       </form>
@@ -138,11 +138,11 @@ function PropertyCard({
         <input type="hidden" name="id" value={property.id} />
         <Input name="name" defaultValue={property.name} required />
         <Input name="address" defaultValue={property.address ?? ""} />
-        <Button type="submit" size="sm" variant="outline" disabled={pending}>
+        <Button type="submit" variant="outline" disabled={pending}>
           Save
         </Button>
       </form>
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between gap-3 text-sm">
         <p className="text-muted-foreground">
           {mp
             ? `${formatHours(mp.totalMinutes)} hours this year (you ${formatHours(mp.taxpayerMinutes)}, spouse ${formatHours(mp.spouseMinutes)})`
@@ -158,7 +158,7 @@ function PropertyCard({
         >
           <input type="hidden" name="id" value={property.id} />
           <input type="hidden" name="archived" value={archived ? "0" : "1"} />
-          <Button type="submit" size="xs" variant="ghost">
+          <Button type="submit" size="sm" variant="outline">
             {archived ? "Restore" : "Archive"}
           </Button>
         </form>
@@ -254,7 +254,7 @@ function MpTestRow({
         placeholder="Note for the CPA (optional)"
         className="min-h-16"
       />
-      <Button type="submit" size="xs" variant="outline" disabled={pending}>
+      <Button type="submit" size="sm" variant="outline" disabled={pending}>
         Save test
       </Button>
     </form>

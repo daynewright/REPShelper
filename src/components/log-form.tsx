@@ -210,7 +210,7 @@ export function LogForm({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="lg" disabled={pending}>
+        <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save hours"}
         </Button>
         {lastEntry && (
