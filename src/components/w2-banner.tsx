@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { InfoSheet } from "@/components/info-sheet";
 import { EMPLOYMENT_LABELS } from "@/lib/reps/constants";
 
 export function W2Banner({
@@ -18,6 +24,9 @@ export function W2Banner({
         and in the 50% denominator. Change this in{" "}
         <Link href="/settings">Settings</Link> only after talking with your CPA.
       </AlertDescription>
+      <AlertAction>
+        <InfoSheet topic="w2_employee" label="Why?" />
+      </AlertAction>
     </Alert>
   );
 }

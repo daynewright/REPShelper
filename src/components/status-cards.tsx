@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { InfoSheet } from "@/components/info-sheet";
 import { Progress } from "@/components/ui/progress";
 import { MP_HOUR_THRESHOLD } from "@/lib/reps/constants";
 import { formatHours, type YearSummary } from "@/lib/reps/summary";
@@ -36,9 +37,12 @@ export function StatusCards({ summary }: { summary: YearSummary }) {
         )}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
-            750-hour test
-          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
+              750-hour test
+            </p>
+            <InfoSheet topic="reps_750" />
+          </div>
           <ListingStatus
             met={summary.reps750.met}
             label={summary.reps750.met ? "Met" : "Not met"}
@@ -78,9 +82,12 @@ export function StatusCards({ summary }: { summary: YearSummary }) {
         )}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
-            More than 50%
-          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
+              More than 50%
+            </p>
+            <InfoSheet topic="reps_50" />
+          </div>
           <ListingStatus
             met={summary.reps50.met}
             label={summary.reps50.met ? "Met" : "Not met"}
@@ -117,9 +124,12 @@ export function StatusCards({ summary }: { summary: YearSummary }) {
         )}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
-            Rental participation
-          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
+              Rental participation
+            </p>
+            <InfoSheet topic="material_participation" />
+          </div>
           <ListingStatus
             met={mpMet && summary.materialParticipation.length > 0}
             label={

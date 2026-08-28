@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ActivityKindSelect } from "@/components/activity-kind-select";
+import { InfoSheet } from "@/components/info-sheet";
 import { NonCountingWarning } from "@/components/non-counting-warning";
 import {
   ACTIVITY_KINDS,
@@ -292,10 +293,13 @@ export function LogForm({
       </div>
       <div className="grid gap-1 -mt-2">
         <FieldError message={errors.hours ?? errors.start_time ?? errors.end_time} />
-        <p className="text-muted-foreground text-xs">
-          Enter hours, or start and end times (start/end is stronger for the CPA
-          file).
-        </p>
+        <div className="text-muted-foreground flex flex-wrap items-center gap-1 text-xs">
+          <p>
+            Enter hours, or start and end times (start/end is stronger for the
+            CPA file).
+          </p>
+          <InfoSheet topic="contemporaneous_log" label="Why?" />
+        </div>
       </div>
 
       <ActivityKindSelect

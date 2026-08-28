@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/confirm-action";
 import { FieldError } from "@/components/field-error";
+import { InfoSheet } from "@/components/info-sheet";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,9 +52,12 @@ export function PropertiesManager({
         <input type="hidden" name="year" value={year} />
         <input type="hidden" name="grouped" value={grouped ? "" : "on"} />
         <div className="text-sm">
-          <p className="font-medium">
-            Track rentals as one activity (grouping election)
-          </p>
+          <div className="flex flex-wrap items-center gap-1">
+            <p className="font-medium">
+              Track rentals as one activity (grouping election)
+            </p>
+            <InfoSheet topic="grouping_election" />
+          </div>
           <p className="text-muted-foreground mt-1">
             Currently {grouped ? "grouped" : "per property"}. This only changes
             how hours are totaled here. Your CPA must still make or confirm the

@@ -1,9 +1,11 @@
 import { TriangleAlertIcon } from "lucide-react";
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import { InfoSheet } from "@/components/info-sheet";
 import { cn } from "@/lib/utils";
 
 export function NonCountingWarning({
@@ -32,6 +34,9 @@ export function NonCountingWarning({
           ? "Confirm with your CPA before relying on these hours."
           : "Investor-type work, commute, and on-call time often do not count. Confirm with your CPA before relying on these hours."}
       </AlertDescription>
+      <AlertAction>
+        <InfoSheet topic="non_counting" tone={tone} label="Why?" />
+      </AlertAction>
     </Alert>
   );
 }
