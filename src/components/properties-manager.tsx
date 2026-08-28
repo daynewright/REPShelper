@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmAction } from "@/components/confirm-action";
+import { FieldError } from "@/components/field-error";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +16,14 @@ import {
   updatePropertyAction,
 } from "@/lib/actions/properties";
 import { saveMpFlagAction, setGroupingAction } from "@/lib/actions/settings";
+import {
+  clearField,
+  firstError,
+  hasErrors,
+  mapServerError,
+  validatePropertyName,
+  type FieldErrors,
+} from "@/lib/form-validation";
 import type { ParticipationFlag, Property } from "@/lib/types";
 
 export function PropertiesManager({
@@ -30,6 +40,7 @@ export function PropertiesManager({
   mp: MpActivitySummary[];
 }) {
   const [pending, start] = useTransition();
+  const [addErrors, setAddErrors] = useState<FieldErrors>({});
 
   return (
     <div className="grid gap-8">
@@ -58,16 +69,40 @@ export function PropertiesManager({
       <section className="grid gap-3">
         <h2 className="font-display text-lg font-semibold">Add a rental</h2>
         <form
-          className="grid gap-3 rounded-xl bg-card p-4 ring-1 ring-rule/80 sm:grid-cols-[1fr_1fr_auto]"
+          noValidate
+          className="grid gap-3 rounded-xl bg-card p-4 ring-1 ring-rule/80 sm:grid-cols-[1fr_1fr_auto] sm:items-start"
           action={(formData) => {
+            const nextErrors = validatePropertyName(
+              String(formData.get("name") ?? ""),
+            );
+            if (hasErrors(nextErrors)) {
+              setAddErrors(nextErrors);
+              toast.error(firstError(nextErrors) ?? "Enter a rental name.");
+              return;
+            }
+            setAddErrors({});
             start(async () => {
               const result = await createPropertyAction(formData);
-              if (result?.error) toast.error(result.error);
-              else toast.success("Rental added");
+              if (result?.error) {
+                setAddErrors(mapServerError(result.error));
+                toast.error(result.error);
+              } else {
+                toast.success("Rental added");
+              }
             });
           }}
         >
-          <Input name="name" placeholder="12 Oak St" required />
+          <div className="grid gap-1.5">
+            <Input
+              name="name"
+              placeholder="12 Oak St"
+              aria-invalid={Boolean(addErrors.name)}
+              onChange={() =>
+                setAddErrors((current) => clearField(current, "name"))
+              }
+            />
+            <FieldError message={addErrors.name} />
+          </div>
           <Input name="address" placeholder="Address (optional)" />
           <Button type="submit" disabled={pending}>
             Add
@@ -121,22 +156,47 @@ function PropertyCard({
   mp?: MpActivitySummary;
 }) {
   const [pending, start] = useTransition();
+  const [errors, setErrors] = useState<FieldErrors>({});
   const archived = Boolean(property.archived_at);
 
   return (
     <div className="grid gap-3 rounded-xl bg-card p-4 ring-1 ring-rule/80">
       <form
-        className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+        noValidate
+        className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-start"
         action={(formData) => {
+          const nextErrors = validatePropertyName(
+            String(formData.get("name") ?? ""),
+          );
+          if (hasErrors(nextErrors)) {
+            setErrors(nextErrors);
+            toast.error(firstError(nextErrors) ?? "Enter a rental name.");
+            return;
+          }
+          setErrors({});
           start(async () => {
             const result = await updatePropertyAction(formData);
-            if (result?.error) toast.error(result.error);
-            else toast.success("Saved");
+            if (result?.error) {
+              setErrors(mapServerError(result.error));
+              toast.error(result.error);
+            } else {
+              toast.success("Saved");
+            }
           });
         }}
       >
         <input type="hidden" name="id" value={property.id} />
-        <Input name="name" defaultValue={property.name} required />
+        <div className="grid gap-1.5">
+          <Input
+            name="name"
+            defaultValue={property.name}
+            aria-invalid={Boolean(errors.name)}
+            onChange={() =>
+              setErrors((current) => clearField(current, "name"))
+            }
+          />
+          <FieldError message={errors.name} />
+        </div>
         <Input name="address" defaultValue={property.address ?? ""} />
         <Button type="submit" variant="outline" disabled={pending}>
           Save
@@ -149,19 +209,48 @@ function PropertyCard({
             : "No hours this year"}
           {archived ? " · Archived" : ""}
         </p>
-        <form
-          action={(formData) => {
-            start(async () => {
-              await archivePropertyAction(formData);
-            });
-          }}
-        >
-          <input type="hidden" name="id" value={property.id} />
-          <input type="hidden" name="archived" value={archived ? "0" : "1"} />
-          <Button type="submit" size="sm" variant="outline">
-            {archived ? "Restore" : "Archive"}
+        {archived ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={pending}
+            onClick={() => {
+              start(async () => {
+                const formData = new FormData();
+                formData.set("id", property.id);
+                formData.set("archived", "0");
+                const result = await archivePropertyAction(formData);
+                if (result?.error) toast.error(result.error);
+                else toast.success("Rental restored");
+              });
+            }}
+          >
+            Restore
           </Button>
-        </form>
+        ) : (
+          <ConfirmAction
+            title="Archive this rental?"
+            description="It will be hidden when logging hours. You can restore it later."
+            confirmLabel="Archive"
+            pending={pending}
+            onConfirm={() => {
+              start(async () => {
+                const formData = new FormData();
+                formData.set("id", property.id);
+                formData.set("archived", "1");
+                const result = await archivePropertyAction(formData);
+                if (result?.error) toast.error(result.error);
+                else toast.success("Rental archived");
+              });
+            }}
+            trigger={
+              <Button type="button" size="sm" variant="destructive" disabled={pending}>
+                Archive
+              </Button>
+            }
+          />
+        )}
       </div>
       {!grouped && !archived && (
         <MpTests

@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmAction } from "@/components/confirm-action";
+import { FieldError } from "@/components/field-error";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,6 +14,14 @@ import {
 import { formatHours } from "@/lib/reps/summary";
 import { parseISODate } from "@/lib/date";
 import { deleteEntryAction, updateEntryAction } from "@/lib/actions/entries";
+import {
+  clearField,
+  firstError,
+  hasErrors,
+  mapServerError,
+  validateEntryEdit,
+  type FieldErrors,
+} from "@/lib/form-validation";
 import type { Property, TimeEntry } from "@/lib/types";
 
 export function ActivityList({
@@ -54,6 +64,7 @@ function ActivityRow({
   properties: Property[];
 }) {
   const [editing, setEditing] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, start] = useTransition();
   const property = properties.find((p) => p.id === entry.property_id);
   const late = entry.created_at.slice(0, 10) > entry.occurred_on;
@@ -61,16 +72,34 @@ function ActivityRow({
   const day = occurred.getDate();
   const month = occurred.toLocaleDateString("en-US", { month: "short" });
 
+  function clear(field: string) {
+    setErrors((current) => clearField(current, field));
+  }
+
   if (editing) {
     return (
       <li className="bg-card rounded-xl p-4 ring-1 ring-rule/80">
         <form
+          noValidate
           className="grid gap-2"
           action={(formData) => {
+            const nextErrors = validateEntryEdit({
+              occurredOn: String(formData.get("occurred_on") ?? ""),
+              hours: String(formData.get("hours") ?? ""),
+              notes: String(formData.get("notes") ?? ""),
+            });
+            if (hasErrors(nextErrors)) {
+              setErrors(nextErrors);
+              toast.error(firstError(nextErrors) ?? "Check the form and try again.");
+              return;
+            }
+            setErrors({});
             start(async () => {
               const result = await updateEntryAction(formData);
-              if (result?.error) toast.error(result.error);
-              else {
+              if (result?.error) {
+                setErrors(mapServerError(result.error));
+                toast.error(result.error);
+              } else {
                 toast.success("Updated");
                 setEditing(false);
               }
@@ -90,21 +119,37 @@ function ActivityRow({
             name="activity_kind"
             value={entry.activity_kind ?? ""}
           />
-          <Input
-            name="occurred_on"
-            type="date"
-            defaultValue={entry.occurred_on}
-            required
-          />
-          <Input
-            name="hours"
-            type="number"
-            min="0.25"
-            step="0.25"
-            defaultValue={entry.duration_minutes / 60}
-            required
-          />
-          <Textarea name="notes" defaultValue={entry.notes} required />
+          <div className="grid gap-1.5">
+            <Input
+              name="occurred_on"
+              type="date"
+              defaultValue={entry.occurred_on}
+              aria-invalid={Boolean(errors.occurred_on)}
+              onChange={() => clear("occurred_on")}
+            />
+            <FieldError message={errors.occurred_on} />
+          </div>
+          <div className="grid gap-1.5">
+            <Input
+              name="hours"
+              type="number"
+              min="0.25"
+              step="0.25"
+              defaultValue={entry.duration_minutes / 60}
+              aria-invalid={Boolean(errors.hours)}
+              onChange={() => clear("hours")}
+            />
+            <FieldError message={errors.hours} />
+          </div>
+          <div className="grid gap-1.5">
+            <Textarea
+              name="notes"
+              defaultValue={entry.notes}
+              aria-invalid={Boolean(errors.notes)}
+              onChange={() => clear("notes")}
+            />
+            <FieldError message={errors.notes} />
+          </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={pending}>
               Save
@@ -112,7 +157,10 @@ function ActivityRow({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setEditing(false)}
+              onClick={() => {
+                setEditing(false);
+                setErrors({});
+              }}
             >
               Cancel
             </Button>
@@ -161,25 +209,26 @@ function ActivityRow({
         >
           Edit
         </Button>
-        <form
-          action={(formData) => {
+        <ConfirmAction
+          title="Delete this entry?"
+          description="This hour block will be removed from the log and cannot be undone."
+          confirmLabel="Delete"
+          pending={pending}
+          onConfirm={() => {
             start(async () => {
+              const formData = new FormData();
+              formData.set("id", entry.id);
               const result = await deleteEntryAction(formData);
               if (result?.error) toast.error(result.error);
               else toast.success("Deleted");
             });
           }}
-        >
-          <input type="hidden" name="id" value={entry.id} />
-          <Button
-            type="submit"
-            size="sm"
-            variant="outline"
-            disabled={pending}
-          >
-            Delete
-          </Button>
-        </form>
+          trigger={
+            <Button type="button" size="sm" variant="destructive" disabled={pending}>
+              Delete
+            </Button>
+          }
+        />
       </div>
     </li>
   );

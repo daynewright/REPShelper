@@ -33,7 +33,7 @@ export function PacketView({
   const months = groupEntriesByMonth(entries);
 
   return (
-    <article className="packet space-y-8 bg-white text-black print:space-y-6">
+    <article className="packet space-y-8 rounded-lg bg-white p-6 text-black shadow-sm ring-1 ring-rule/80 sm:p-8 md:p-10 print:rounded-none print:p-0 print:shadow-none print:ring-0 print:space-y-6">
       <header className="border-b pb-4">
         <p className="text-xs tracking-wide text-neutral-500 uppercase">
           REPS substantiation packet
