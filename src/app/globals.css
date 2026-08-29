@@ -141,12 +141,32 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image:
-      linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--ink) 7%, var(--fog)) 0%,
-        var(--fog) 220px
-      );
+  }
+  /* Soften native date/time field chrome; popup UI stays browser-controlled. */
+  input[type="date"],
+  input[type="time"] {
+    accent-color: var(--marker);
+  }
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit {
+    padding: 0;
+  }
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="time"]::-webkit-datetime-edit-text {
+    color: var(--muted-foreground);
+    padding: 0 0.15rem;
+  }
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-year-field,
+  input[type="time"]::-webkit-datetime-edit-hour-field,
+  input[type="time"]::-webkit-datetime-edit-minute-field,
+  input[type="time"]::-webkit-datetime-edit-ampm-field {
+    color: var(--ink);
   }
 }
 
@@ -179,7 +199,6 @@
   }
   body {
     background: white;
-    background-image: none;
   }
   a {
     color: inherit;

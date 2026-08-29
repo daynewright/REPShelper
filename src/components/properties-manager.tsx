@@ -281,10 +281,13 @@ function MpTests({
 }) {
   return (
     <div className="grid gap-2">
-      <p className="text-sm font-medium">{title}</p>
+      <div className="flex flex-wrap items-center gap-1">
+        <p className="text-sm font-medium">{title}</p>
+        <InfoSheet topic="mp_tests" label="What is this?" />
+      </div>
       <p className="text-muted-foreground text-xs">
-        The 500-hour test is calculated from your log. Check others only if they
-        apply — your CPA should confirm.
+        The 500-hour test is calculated from your log. These checkboxes are
+        optional alternate tests — only mark one if your CPA says it may apply.
       </p>
       {MP_TESTS.map((test) => {
         const existing = flags.find((f) => f.test_code === test.code);

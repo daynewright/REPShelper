@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/confirm-action";
+import { DatePicker } from "@/components/date-picker";
 import { FieldError } from "@/components/field-error";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -120,9 +121,8 @@ function ActivityRow({
             value={entry.activity_kind ?? ""}
           />
           <div className="grid gap-1.5">
-            <Input
+            <DatePicker
               name="occurred_on"
-              type="date"
               defaultValue={entry.occurred_on}
               aria-invalid={Boolean(errors.occurred_on)}
               onChange={() => clear("occurred_on")}

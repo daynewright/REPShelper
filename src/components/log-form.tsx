@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ActivityKindSelect } from "@/components/activity-kind-select";
+import { DatePicker } from "@/components/date-picker";
 import { InfoSheet } from "@/components/info-sheet";
 import { NonCountingWarning } from "@/components/non-counting-warning";
 import {
@@ -233,10 +234,9 @@ export function LogForm({
 
       <div className="grid gap-2">
         <Label htmlFor="occurred_on">Date</Label>
-        <Input
+        <DatePicker
           id="occurred_on"
           name="occurred_on"
-          type="date"
           defaultValue={todayISO()}
           aria-invalid={Boolean(errors.occurred_on)}
           onChange={() => clear("occurred_on")}

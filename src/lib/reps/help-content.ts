@@ -15,6 +15,7 @@ export type HelpTopicId =
   | "reps_750"
   | "reps_50"
   | "material_participation"
+  | "mp_tests"
   | "non_counting"
   | "contemporaneous_log"
   | "grouping_election"
@@ -117,6 +118,27 @@ export const HELP_TOPICS: Record<HelpTopicId, HelpTopic> = {
       },
       {
         label: "IRS Publication 925",
+        href: "https://www.irs.gov/publications/p925",
+      },
+    ],
+  },
+  mp_tests: {
+    title: "What are these participation “tests”?",
+    summary:
+      "They are alternate ways the tax rules let you prove material participation — not quizzes you take in the app.",
+    paragraphs: [
+      "On Rentals, the 500-hour figure is calculated automatically from your log (per property, or for all rentals if you track them as grouped). Hitting 500+ hours is one common way to show material participation.",
+      "The checkboxes below that are the other official material-participation tests from the regulations. You do not need all of them. Most people rely on hours; the extras are for situations where 500 hours is not the cleanest fit (for example, you did substantially all of the work, or you have a multi-year history in the activity).",
+      "Checking a box here does not file anything with the IRS. It only records a note for your CPA packet: “taxpayer is claiming this test may apply.” Your CPA decides whether it actually does on the return.",
+      "Quick guide to the labels: “Substantially all” means you did nearly all the participation. “100+ and not less than anyone else” means you cleared 100 hours and no other person participated more. “SPA 500+” combines several significant participation activities. “5 of 10” and “personal service” look at prior years. “Facts and circumstances” is a facts-based catch-all — usually discussed with a CPA.",
+    ],
+    sources: [
+      {
+        label: "Treas. Reg. §1.469-5T(a) — Seven material participation tests",
+        href: "https://www.law.cornell.edu/cfr/text/26/1.469-5T",
+      },
+      {
+        label: "IRS Publication 925 — Material participation",
         href: "https://www.irs.gov/publications/p925",
       },
     ],
