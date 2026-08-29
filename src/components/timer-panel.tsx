@@ -368,10 +368,10 @@ export function TimerPanel({
             Start timer
           </Button>
           <Link
-            href="/log"
+            href="/hours?add=1"
             className="text-muted-foreground hover:text-ink py-1 text-center text-sm underline-offset-4 hover:underline"
           >
-            Or log hours without a timer
+            Or add hours without a timer
           </Link>
         </div>
       </form>

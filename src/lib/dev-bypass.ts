@@ -262,6 +262,7 @@ export function loadDevWorkspace(year: number) {
     year,
     profile: store.profile,
     properties: store.properties,
+    usedPropertyIds: usedDevPropertyIds(),
     entries,
     timer: store.timer,
     settings,
@@ -437,6 +438,42 @@ export function archiveDevProperty(propertyId: string, archived: boolean) {
     }
   });
   return { ok: true as const };
+}
+
+export function propertyHasLoggedHours(propertyId: string): boolean {
+  const store = getDevStore();
+  return store.entries.some((entry) => entry.property_id === propertyId);
+}
+
+export function deleteDevProperty(propertyId: string) {
+  const store = getDevStore();
+  if (!store.properties.some((p) => p.id === propertyId)) {
+    return { error: "Property not found." };
+  }
+  if (propertyHasLoggedHours(propertyId)) {
+    return {
+      error:
+        "This rental has logged hours. Mark it inactive instead of deleting.",
+    };
+  }
+  if (store.timer?.property_id === propertyId) {
+    return { error: "Stop the active timer on this rental before deleting." };
+  }
+  updateDevStore((s) => {
+    s.properties = s.properties.filter((p) => p.id !== propertyId);
+    s.flags = s.flags.filter((f) => f.property_id !== propertyId);
+  });
+  return { ok: true as const };
+}
+
+export function usedDevPropertyIds(): string[] {
+  const store = getDevStore();
+  const ids = new Set<string>();
+  for (const entry of store.entries) {
+    if (entry.property_id) ids.add(entry.property_id);
+  }
+  if (store.timer?.property_id) ids.add(store.timer.property_id);
+  return [...ids];
 }
 
 export function setDevGrouping(year: number, grouped: boolean) {

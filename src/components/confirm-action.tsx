@@ -23,6 +23,7 @@ export function ConfirmAction({
   onConfirm,
   trigger,
   pending = false,
+  destructive = true,
 }: {
   title: string;
   description: string;
@@ -31,6 +32,8 @@ export function ConfirmAction({
   onConfirm: () => void;
   trigger: React.ReactNode;
   pending?: boolean;
+  /** When false, uses a normal primary confirm (for non-destructive actions). */
+  destructive?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -39,7 +42,13 @@ export function ConfirmAction({
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogMedia className="bg-destructive/10 text-destructive">
+          <AlertDialogMedia
+            className={
+              destructive
+                ? "bg-destructive/10 text-destructive"
+                : "bg-muted text-muted-foreground"
+            }
+          >
             <TriangleAlertIcon />
           </AlertDialogMedia>
           <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -48,7 +57,7 @@ export function ConfirmAction({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
-            variant="destructive"
+            variant={destructive ? "destructive" : "default"}
             disabled={pending}
             onClick={(event) => {
               event.preventDefault();

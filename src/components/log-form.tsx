@@ -35,6 +35,7 @@ import {
   validateLogEntry,
   type FieldErrors,
 } from "@/lib/form-validation";
+import { cn } from "@/lib/utils";
 import type { Category, Performer, Property, TimeEntry } from "@/lib/types";
 
 const CATEGORY_OPTIONS: Category[] = [
@@ -56,9 +57,11 @@ const FIELD_FOCUS: Record<string, string> = {
 export function LogForm({
   properties,
   lastEntry,
+  className,
 }: {
   properties: Property[];
   lastEntry: TimeEntry | null;
+  className?: string;
 }) {
   const activeProperties = properties.filter((p) => !p.archived_at);
   const [category, setCategory] = useState<Category>(
@@ -105,7 +108,10 @@ export function LogForm({
   return (
     <form
       noValidate
-      className="bg-card grid gap-5 rounded-xl p-5 shadow-[0_1px_0_color-mix(in_oklab,var(--ink)_6%,transparent)] ring-1 ring-rule/80"
+      className={cn(
+        "bg-card grid gap-5 rounded-xl p-5 shadow-[0_1px_0_color-mix(in_oklab,var(--ink)_6%,transparent)] ring-1 ring-rule/80",
+        className,
+      )}
       onSubmit={(event) => {
         event.preventDefault();
         const form = event.currentTarget;

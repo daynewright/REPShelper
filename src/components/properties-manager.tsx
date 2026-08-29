@@ -14,6 +14,7 @@ import { formatHours, type MpActivitySummary } from "@/lib/reps/summary";
 import {
   archivePropertyAction,
   createPropertyAction,
+  deletePropertyAction,
   updatePropertyAction,
 } from "@/lib/actions/properties";
 import { saveMpFlagAction, setGroupingAction } from "@/lib/actions/settings";
@@ -30,18 +31,27 @@ import type { ParticipationFlag, Property } from "@/lib/types";
 export function PropertiesManager({
   year,
   properties,
+  usedPropertyIds,
   grouped,
   flags,
   mp,
 }: {
   year: number;
   properties: Property[];
+  usedPropertyIds: string[];
   grouped: boolean;
   flags: ParticipationFlag[];
   mp: MpActivitySummary[];
 }) {
   const [pending, start] = useTransition();
   const [addErrors, setAddErrors] = useState<FieldErrors>({});
+  const usedIds = new Set(usedPropertyIds);
+  const ordered = [...properties].sort((a, b) => {
+    const aInactive = Boolean(a.archived_at);
+    const bInactive = Boolean(b.archived_at);
+    if (aInactive !== bInactive) return aInactive ? 1 : -1;
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <div className="grid gap-8">
@@ -115,19 +125,26 @@ export function PropertiesManager({
       </section>
 
       <section className="grid gap-4">
-        <h2 className="font-display text-lg font-semibold">Your rentals</h2>
-        {properties.length === 0 ? (
+        <div className="grid gap-1">
+          <h2 className="font-display text-lg font-semibold">Your rentals</h2>
+          <p className="text-muted-foreground text-sm">
+            Inactive rentals stay in prior-year packets. Delete is only for
+            rentals with no logged hours.
+          </p>
+        </div>
+        {ordered.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             No properties yet. Add one to log rental hours.
           </p>
         ) : (
-          properties.map((property) => (
+          ordered.map((property) => (
             <PropertyCard
               key={property.id}
               property={property}
               year={year}
               grouped={grouped}
               flags={flags}
+              hasHistory={usedIds.has(property.id)}
               mp={mp.find((a) => a.propertyId === property.id)}
             />
           ))
@@ -151,20 +168,28 @@ function PropertyCard({
   year,
   grouped,
   flags,
+  hasHistory,
   mp,
 }: {
   property: Property;
   year: number;
   grouped: boolean;
   flags: ParticipationFlag[];
+  hasHistory: boolean;
   mp?: MpActivitySummary;
 }) {
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<FieldErrors>({});
-  const archived = Boolean(property.archived_at);
+  const inactive = Boolean(property.archived_at);
 
   return (
-    <div className="grid gap-3 rounded-xl bg-card p-4 ring-1 ring-rule/80">
+    <div
+      className={
+        inactive
+          ? "grid gap-3 rounded-xl bg-card/70 p-4 ring-1 ring-rule/60"
+          : "grid gap-3 rounded-xl bg-card p-4 ring-1 ring-rule/80"
+      }
+    >
       <form
         noValidate
         className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-start"
@@ -206,57 +231,95 @@ function PropertyCard({
           Save
         </Button>
       </form>
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <p className="text-muted-foreground">
-          {mp
-            ? `${formatHours(mp.totalMinutes)} hours this year (you ${formatHours(mp.taxpayerMinutes)}, spouse ${formatHours(mp.spouseMinutes)})`
-            : "No hours this year"}
-          {archived ? " · Archived" : ""}
-        </p>
-        {archived ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={pending}
-            onClick={() => {
-              start(async () => {
-                const formData = new FormData();
-                formData.set("id", property.id);
-                formData.set("archived", "0");
-                const result = await archivePropertyAction(formData);
-                if (result?.error) toast.error(result.error);
-                else toast.success("Rental restored");
-              });
-            }}
-          >
-            Restore
-          </Button>
-        ) : (
-          <ConfirmAction
-            title="Archive this rental?"
-            description="It will be hidden when logging hours. You can restore it later."
-            confirmLabel="Archive"
-            pending={pending}
-            onConfirm={() => {
-              start(async () => {
-                const formData = new FormData();
-                formData.set("id", property.id);
-                formData.set("archived", "1");
-                const result = await archivePropertyAction(formData);
-                if (result?.error) toast.error(result.error);
-                else toast.success("Rental archived");
-              });
-            }}
-            trigger={
-              <Button type="button" size="sm" variant="destructive" disabled={pending}>
-                Archive
-              </Button>
-            }
-          />
-        )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm">
+          <p className="text-muted-foreground">
+            {mp
+              ? `${formatHours(mp.totalMinutes)} hours this year (you ${formatHours(mp.taxpayerMinutes)}, spouse ${formatHours(mp.spouseMinutes)})`
+              : "No hours this year"}
+            {inactive ? " · Inactive" : ""}
+          </p>
+          {inactive ? (
+            <p className="text-muted-foreground mt-1 text-xs">
+              Hidden from new logs. Past hours still appear when you switch to
+              the years you owned it.
+            </p>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {inactive ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => {
+                start(async () => {
+                  const formData = new FormData();
+                  formData.set("id", property.id);
+                  formData.set("archived", "0");
+                  const result = await archivePropertyAction(formData);
+                  if (result?.error) toast.error(result.error);
+                  else toast.success("Rental marked active");
+                });
+              }}
+            >
+              Mark active
+            </Button>
+          ) : (
+            <ConfirmAction
+              title="Mark this rental inactive?"
+              description="Use this when you sell or stop operating a property. It will be hidden when logging new hours, but past hours stay in your packet for those years."
+              confirmLabel="Mark inactive"
+              destructive={false}
+              pending={pending}
+              onConfirm={() => {
+                start(async () => {
+                  const formData = new FormData();
+                  formData.set("id", property.id);
+                  formData.set("archived", "1");
+                  const result = await archivePropertyAction(formData);
+                  if (result?.error) toast.error(result.error);
+                  else toast.success("Rental marked inactive");
+                });
+              }}
+              trigger={
+                <Button type="button" size="sm" variant="outline" disabled={pending}>
+                  Mark inactive
+                </Button>
+              }
+            />
+          )}
+          {!hasHistory ? (
+            <ConfirmAction
+              title="Delete this rental?"
+              description="This rental has no logged hours, so it can be removed completely."
+              confirmLabel="Delete"
+              pending={pending}
+              onConfirm={() => {
+                start(async () => {
+                  const formData = new FormData();
+                  formData.set("id", property.id);
+                  const result = await deletePropertyAction(formData);
+                  if (result?.error) toast.error(result.error);
+                  else toast.success("Rental deleted");
+                });
+              }}
+              trigger={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  disabled={pending}
+                >
+                  Delete
+                </Button>
+              }
+            />
+          ) : null}
+        </div>
       </div>
-      {!grouped && !archived && (
+      {!grouped && !inactive && (
         <MpTests
           year={year}
           propertyId={property.id}

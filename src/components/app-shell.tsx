@@ -23,7 +23,7 @@ export function AppShell({
         </div>
       ) : null}
       <header className="no-print sticky top-0 z-20 border-b border-rule/70 bg-paper/88 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <Wordmark href="/home" />
           <div className="flex items-center gap-1 sm:gap-2">
             <YearSwitcher year={year} />
@@ -44,10 +44,10 @@ export function AppShell({
         </div>
         <TopNav />
       </header>
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 pb-28 md:pb-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-28 md:pb-8">
         {children}
       </main>
-      <footer className="no-print mx-auto hidden w-full max-w-4xl px-4 pb-8 md:block">
+      <footer className="no-print mx-auto hidden w-full max-w-6xl px-4 pb-8 md:block">
         <Disclaimer />
       </footer>
       <MobileNav />

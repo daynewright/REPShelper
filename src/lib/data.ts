@@ -42,6 +42,7 @@ export async function loadWorkspace(year?: number) {
     timerRes,
     settingsRes,
     flagsRes,
+    usedPropertyRes,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("properties").select("*").eq("user_id", userId).order("name"),
@@ -65,6 +66,11 @@ export async function loadWorkspace(year?: number) {
       .select("*")
       .eq("user_id", userId)
       .eq("year", selectedYear),
+    supabase
+      .from("time_entries")
+      .select("property_id")
+      .eq("user_id", userId)
+      .not("property_id", "is", null),
   ]);
 
   const profile = (profileRes.data as Profile | null) ?? null;
@@ -73,6 +79,17 @@ export async function loadWorkspace(year?: number) {
   const timer = (timerRes.data as ActiveTimer | null) ?? null;
   const settings = (settingsRes.data as TaxYearSettings | null) ?? null;
   const flags = (flagsRes.data as ParticipationFlag[] | null) ?? [];
+  const usedPropertyIds = [
+    ...new Set(
+      [
+        ...((usedPropertyRes.data as { property_id: string | null }[] | null) ??
+          []),
+        ...(timer?.property_id ? [{ property_id: timer.property_id }] : []),
+      ]
+        .map((row) => row.property_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
 
   const summary = buildYearSummary({
     year: selectedYear,
@@ -89,6 +106,7 @@ export async function loadWorkspace(year?: number) {
     year: selectedYear,
     profile,
     properties,
+    usedPropertyIds,
     entries,
     timer,
     settings,
