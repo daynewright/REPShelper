@@ -19,6 +19,7 @@ import { ActivityKindSelect } from "@/components/activity-kind-select";
 import { DatePicker } from "@/components/date-picker";
 import { InfoSheet } from "@/components/info-sheet";
 import { NonCountingWarning } from "@/components/non-counting-warning";
+import { TimePicker } from "@/components/time-picker";
 import {
   ACTIVITY_KINDS,
   CATEGORY_LABELS,
@@ -265,10 +266,9 @@ export function LogForm({
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-2">
             <Label htmlFor="start_time">Start</Label>
-            <Input
+            <TimePicker
               id="start_time"
               name="start_time"
-              type="time"
               aria-invalid={Boolean(errors.start_time)}
               onChange={() => {
                 clear("start_time");
@@ -278,10 +278,9 @@ export function LogForm({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="end_time">End</Label>
-            <Input
+            <TimePicker
               id="end_time"
               name="end_time"
-              type="time"
               aria-invalid={Boolean(errors.end_time)}
               onChange={() => {
                 clear("end_time");
